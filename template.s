@@ -74,12 +74,32 @@ _start:
 	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
+open_led:
 	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
 	ldr r6, = GPIOB_ODR                 @ Load GPIOD output data register
 	ldr r5, [r6]                        @ Read its content to r5
 	orr r5, 0x0080                      @ write 1 to pin 7
 	orr r5, 0x4000                      @ write 1 to pin 14
 	orr r5, 0x0001                      @ write 1 to pin 0
+	str r5, [r6]                        @ Store back the result in GPIOD output data register
+
+
+delay:
+	ldr r0, = 1			@ 32.768Khz 0x01F40000 
+	ldr r1,=5200000		@ loop+delay makes 6 operations? divide to 6 
+	muls r0, r1			@ Multiplier
+loop_delay:
+	subs r0, #1		@ In each loop decrement
+	bne loop_delay	@ until r0 == 0
+
+close_led:
+	@ Set GPIOB Pin7 to 01 (bit 7 in ODR register)
+	ldr r6, = GPIOB_ODR                 @ Load GPIOD output data register
+	ldr r5, [r6]                        @ Read its content to r5
+	@and r5, 0x0000
+	bic r5, 0x0080                      @ write 0 to pin 7
+	bic r5, 0x4000                      @ write 0 to pin 14
+	bic r5, 0x0001                      @ write 0 to pin 0
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 
 loop:
