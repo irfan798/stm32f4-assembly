@@ -87,7 +87,7 @@ open_led:
 delay:
 	ldr r0, = 1			@ 32.768Khz 0x01F40000 
 	ldr r1,=5200000		@ loop+delay makes 6 operations? divide to 6 
-	muls r0, r1			@ Multiplier
+	muls r0, r1			@ Multiplier MAX 825 seconds
 loop_delay:
 	subs r0, #1		@ In each loop decrement
 	bne loop_delay	@ until r0 == 0
