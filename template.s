@@ -10,6 +10,7 @@
 
 .thumb
 .syntax unified
+.cpu cortex-m4
 @.arch armv7e-m
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -29,11 +30,15 @@
 @   AHB1ENR register offset is 0x30
 .equ     RCC_AHB1ENR,   0x40023830      @ RCC AHB1 peripheral clock register (page 180)
 
-@ GPIOD base address is 0x40020C00
+
+@0x4002 0400 - 0x4002 07FF GPIOB
+
+
+@ GPIOB base address is 0x40020400
 @   MODER register offset is 0x00
 @   ODR   register offset is 0x14
-.equ     GPIOD_MODER,   0x40020C00      @ GPIOD port mode register (page 281)
-.equ     GPIOD_ODR,     0x40020C14      @ GPIOD port output data register (page 283)
+.equ     GPIOB_MODER,   0x40020400      @ GPIOB port mode register (page 281)
+.equ     GPIOB_ODR,     0x40020414      @ GPIOB port output data register (page 283)
 
 @ Start of text section
 .section .text
@@ -50,23 +55,31 @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 _start:
-	@ Enable GPIOD Peripheral Clock (bit 3 in AHB1ENR register)
+	@ Enable GPIOB Peripheral Clock (bit 3 in AHB1ENR register)
 	ldr r6, = RCC_AHB1ENR               @ Load peripheral clock register address to r6
 	ldr r5, [r6]                        @ Read its content to r5
-	orr r5, 0x00000008                  @ Set bit 3 to enable GPIOD clock
+	orr r5, #0x00000002                 @ Set bit 2 to enable GPIOB clock
 	str r5, [r6]                        @ Store back the result in peripheral clock register
 
-	@ Make GPIOD Pin12 as output pin (bits 25:24 in MODER register)
-	ldr r6, = GPIOD_MODER               @ Load GPIOD MODER register address to r6
+	@ Make GPIOB Pin7 as output pin (bits 15:14 in MODER register)
+	ldr r6, = GPIOB_MODER               @ Load GPIOD MODER register address to r6
 	ldr r5, [r6]                        @ Read its content to r5
-	and r5, 0xFCFFFFFF                  @ Clear bits 24, 25 for P12
-	orr r5, 0x01000000                  @ Write 01 to bits 24, 25 for P12
+	@and r5, 0xFFFF3FFF                  @ Clear bits 14, 15 for P7
+	@orr r5, 0x00004000                  @ Write 01 to bits 14, 15 for P7
+	and r5, 0xFFFF3FFF                  @ Clear bits 14, 15 for P7 and 0,1 for P0
+	and r5, 0xCFFFFFFF                  @ Clear bits 14, 15 for P7 and 0,1 for P0
+	and r5, 0xFFFFFFFC                  @ Clear bits 14, 15 for P7 and 0,1 for P0
+	orr r5, 0x00004000                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
+	orr r5, 0x10000000                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
+	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
-	@ Set GPIOD Pin12 to 1 (bit 12 in ODR register)
-	ldr r6, = GPIOD_ODR                 @ Load GPIOD output data register
+	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
+	ldr r6, = GPIOB_ODR                 @ Load GPIOD output data register
 	ldr r5, [r6]                        @ Read its content to r5
-	orr r5, 0x1000                      @ write 1 to pin 12
+	orr r5, 0x0080                      @ write 1 to pin 7
+	orr r5, 0x4000                      @ write 1 to pin 14
+	orr r5, 0x0001                      @ write 1 to pin 0
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 
 loop:
