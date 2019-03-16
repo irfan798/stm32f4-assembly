@@ -30,6 +30,7 @@
 @   AHB1ENR register offset is 0x30
 .equ     RCC_AHB1ENR,   0x40023830      @ RCC AHB1 peripheral clock register (page 180)
 
+@Button PC13 or PA0
 
 @0x4002 0400 - 0x4002 07FF GPIOB
 
@@ -55,10 +56,12 @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 _start:
-	@ Enable GPIOB Peripheral Clock (bit 3 in AHB1ENR register)
+	@ Enable GPIOB and GPIOC Peripheral Clock (bit 1 2 and 3 in AHB1ENR register)
 	ldr r6, = RCC_AHB1ENR               @ Load peripheral clock register address to r6
 	ldr r5, [r6]                        @ Read its content to r5
+	orr r5, #0x00000001                 @ Set bit 1 to enable GPIOA clock
 	orr r5, #0x00000002                 @ Set bit 2 to enable GPIOB clock
+	orr r5, #0x00000004                 @ Set bit 3 to enable GPIOC clock
 	str r5, [r6]                        @ Store back the result in peripheral clock register
 
 	@ Make GPIOB Pin7 as output pin (bits 15:14 in MODER register)
@@ -73,6 +76,9 @@ _start:
 	orr r5, 0x10000000                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
+
+
+	@ GPIOC mod
 
 	bl open_led
 	ldr r0, =3 	@3 secs delay
