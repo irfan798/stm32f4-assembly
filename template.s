@@ -41,6 +41,16 @@
 .equ     GPIOB_MODER,   0x40020400      @ GPIOB port mode register (page 281)
 .equ     GPIOB_ODR,     0x40020414      @ GPIOB port output data register (page 283)
 
+
+@ GPIOA base address is 4002 0000
+@   Input register offset is 0x10
+.equ     GPIOA_INPUT,   0x40020010      @ 
+
+
+@ GPIOC base address is 4002 0800
+@   Input register offset is 0x10
+.equ     GPIOC_INPUT,   0x40020810      @ 
+
 @ Start of text section
 .section .text
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -78,22 +88,35 @@ _start:
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
 
-	@ GPIOC mod
 
-	bl open_led
-	ldr r0, =3 	@3 secs delay
-	bl delay
-	bl close_led
-	bl delay
+	@bl open_led
+	@ldr r0, =3 	@3 secs delay
+	@bl delay
+	@bl close_led
+	@bl delay
+	@bl open_led
+	@ldr r0, =1 	@3 secs delay
+	@bl delay
+	@bl close_led
+
+loop:
+	
+	@ GPIOA INPUT
+	@ldr r6, = GPIOA_INPUT               @ Load GPIOA INPUT register address to r6
+	ldr r6, = GPIOC_INPUT               @ Load GPIOA INPUT register address to r6
+	ldr r5, [r6]                        @ Read its content to r5
+	@movs r6, 0x00000001                 	@ PA0	
+	movs r6, 0x00002000                 	@ PC13
+	tst r5, r6							@Test if equal
+	bne loop
+
 	bl open_led
 	ldr r0, =1 	@3 secs delay
 	bl delay
 	bl close_led
 
-loop:
 	nop                                 @ No operation. Do nothing.
 	b loop                              @ Jump to loop
-
 
 
 open_led:
