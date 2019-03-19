@@ -92,10 +92,10 @@ _start:
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
 	@ Make PC13 pull down
-	ldr r6, = GPIOC_PUPDR               @ Load GPIOC_PUPDR register address to r6
-	ldr r5, [r6]                        @ Read its content to r5
+	@ldr r6, = GPIOC_PUPDR               @ Load GPIOC_PUPDR register address to r6
+	@ldr r5, [r6]                        @ Read its content to r5
 	@orr r5, 0x04000000                  @ Write 01 to bits 27, 26 PC13 	
-	str r5, [r6] 
+	@str r5, [r6] 
 
 loop:
 	
