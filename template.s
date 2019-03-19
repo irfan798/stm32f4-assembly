@@ -49,7 +49,10 @@
 
 @ GPIOC base address is 4002 0800
 @   Input register offset is 0x10
-.equ     GPIOC_INPUT,   0x40020810      @ 
+.equ     GPIOC_INPUT,   0x40020810      @
+@ Pull up/Pull Down offset 0x0C 
+.equ     GPIOC_PUPDR,   0x4002080C      @ 
+
 
 @ Start of text section
 .section .text
@@ -88,27 +91,21 @@ _start:
 	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
-
-
-	@bl open_led
-	@ldr r0, =3 	@3 secs delay
-	@bl delay
-	@bl close_led
-	@bl delay
-	@bl open_led
-	@ldr r0, =1 	@3 secs delay
-	@bl delay
-	@bl close_led
+	@ Make PC13 pull down
+	ldr r6, = GPIOC_PUPDR               @ Load GPIOC_PUPDR register address to r6
+	ldr r5, [r6]                        @ Read its content to r5
+	@orr r5, 0x04000000                  @ Write 01 to bits 27, 26 PC13 	
+	str r5, [r6] 
 
 loop:
 	
-	@ GPIOA INPUT
-	@ldr r6, = GPIOA_INPUT               @ Load GPIOA INPUT register address to r6
-	ldr r6, = GPIOC_INPUT               @ Load GPIOA INPUT register address to r6
+	@ GPIOC INPUT IDR
+	@ldr r6, = GPIOA_INPUT              @ Load GPIOA INPUT register address to r6
+	ldr r6, = GPIOC_INPUT               @ Load GPIOC INPUT register address to r6
 	ldr r5, [r6]                        @ Read its content to r5
-	@movs r6, 0x00000001                 	@ PA0	
-	movs r6, 0x00002000                 	@ PC13
-	tst r5, r6							@Test if equal
+	movs r6, 0x00002000                 @ PC13
+	and r5, r6
+	cmp r5, r6							@Test if equal
 	bne loop
 
 	bl open_led
