@@ -69,9 +69,10 @@ _start:
 	@ Enable GPIOB and GPIOC Peripheral Clock (bit 1 2 and 3 in AHB1ENR register)
 	ldr r6, = RCC_AHB1ENR               @ Load peripheral clock register address to r6
 	ldr r5, [r6]                        @ Read its content to r5
-	orr r5, #0x00000001                 @ Set bit 1 to enable GPIOA clock
-	orr r5, #0x00000002                 @ Set bit 2 to enable GPIOB clock
-	orr r5, #0x00000004                 @ Set bit 3 to enable GPIOC clock
+	@orr r5, #0x00000001                 @ Set bit 1 to enable GPIOA clock
+	@orr r5, #0x00000002                 @ Set bit 2 to enable GPIOB clock
+	@orr r5, #0x00000004                 @ Set bit 3 to enable GPIOC clock
+	orr r5, #0x00000007                 @ Set bit 3 to enable GPIOC clock	
 	str r5, [r6]                        @ Store back the result in peripheral clock register
 
 	@ Make GPIOB Pin7 as output pin (bits 15:14 in MODER register)
