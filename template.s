@@ -21,6 +21,7 @@
 
 @ Constants
 .equ     LEDDELAY,      100000
+.equ     MORSE_HOLDER,   0x0000001F  @0000 0000 0000 0000 0000 0000 0001 1111 
 
 @ Register Addresses
 @ You can find the base addresses for all the peripherals from Memory Map section
@@ -52,6 +53,7 @@
 .equ     GPIOC_INPUT,   0x40020810      @
 @ Pull up/Pull Down offset 0x0C 
 .equ     GPIOC_PUPDR,   0x4002080C      @ 
+
 
 
 @ Start of text section
@@ -91,31 +93,7 @@ _start:
 	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
-	@ Make PC13 pull down
-	@ldr r6, = GPIOC_PUPDR               @ Load GPIOC_PUPDR register address to r6
-	@ldr r5, [r6]                        @ Read its content to r5
-	@orr r5, 0x04000000                  @ Write 01 to bits 27, 26 PC13 	
-	@str r5, [r6] 
-
-loop:
-	
-	@ GPIOC INPUT IDR
-	@ldr r6, = GPIOA_INPUT              @ Load GPIOA INPUT register address to r6
-	ldr r6, = GPIOC_INPUT               @ Load GPIOC INPUT register address to r6
-	ldr r5, [r6]                        @ Read its content to r5
-	movs r6, 0x00002000                 @ PC13
-	and r5, r6
-	cmp r5, r6							@Test if equal
-	bne loop
-
-	bl open_led
-	ldr r0, =1 	@3 secs delay
-	bl delay
-	bl close_led
-
-	nop                                 @ No operation. Do nothing.
-	b loop                              @ Jump to loop
-
+	b morse
 
 open_led:
 	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
@@ -129,8 +107,10 @@ open_led:
 
 
 delay:
+	@ r0 is our parameter as miliseconds
 	@ 32.768Khz 0x01F40000 
-	ldr r1,=5200000		@ loop+delay makes 6 operations? divide to 6 
+	@ldr r1,=5200		@ loop+delay makes 6 operations? divide to 6 
+	ldr r1,=2600		@ loop+delay makes 6 operations? divide to 6 
 	muls r0, r1			@ Multiplier MAX 825 seconds
 loop_delay:
 	subs r0, #1		@ In each loop decrement
@@ -149,3 +129,45 @@ close_led:
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 	ldr r0, = 3
 	bx lr								@ Jump back to link register
+
+
+
+
+morse:
+	ldr r1, = 7
+	@ 1 means dot 0 means dash
+	@ r1 is our parameter
+	ldr r2, =MORSE_HOLDER @ load morse holder
+	ror r2, r2, r1 @ Rotate r2 by r1 and save to r2
+	
+	ldr r3, =0x00000001  @1000 0000 0000 0000 0000 0000 0000 0000
+	ldr r4, =5 @ We have 5 signals on morse numbers
+
+_show:
+	ror r3, r3, #1 @ Right shift by one
+	ands r5, r2, r3  @ Get first digit then write to r5
+	cmp r3,	r5 @ Compare digit if its dash or dot
+
+	IT EQ @ Condtion on equal
+	ldreq r0, =1000 @ If digit is one (dot) set timer to 1000ms
+	
+	IT NE @Condition on not equal
+	ldrne r0, =3000 @ If digit is zero (dash) set timer to 3000ms
+
+	IT AL @ Not conditional
+	bl open_led
+	bl delay
+	bl close_led
+
+	ldr r0, =1000 @ 1000ms delay 
+	bl delay
+
+	subs r4, #1 @ Decrement counter
+	bne _show	@ until r4 == 0
+
+
+
+loop:
+	nop                                 @ No operation. Do nothing.
+	b loop @ Jump to loop
+
