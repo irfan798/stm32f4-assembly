@@ -63,11 +63,64 @@ _start:
 	orr r5, 0x01000000                  @ Write 01 to bits 24, 25 for P12
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
-	@ Set GPIOD Pin12 to 1 (bit 12 in ODR register)
+
+	ldr r4, = 12
+	bl fibonacci
+	bl open_led
+	ldr r0, =3 	@3 secs delay
+	bl delay
+	bl close_led
+	bl delay
+	bl open_led
+	ldr r0, =1 	@3 secs delay
+	bl delay
+	bl close_led
+
+
+fibonacci:
+		mov r1, #0
+		mov r2, #1
+		f_first:
+			subs r4, r4, #1
+		f_compute:
+			add r3, r1, r2
+			mov r1, r2
+			mov r2, r3
+			subs r4, r4, #1
+			beq f_end
+			bal f_compute
+		f_end:
+			mov r9, r3
+			bx lr
+
+open_led:
+	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
 	ldr r6, = GPIOD_ODR                 @ Load GPIOD output data register
 	ldr r5, [r6]                        @ Read its content to r5
 	orr r5, 0x1000                      @ write 1 to pin 12
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
+	bx lr @ Jump back to link register
+
+close_led:
+	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
+	ldr r6, = GPIOD_ODR                 @ Load GPIOD output data register
+	ldr r5, [r6]                        @ Read its content to r5
+	@and r5, 0x0000
+	bic r5, 0x1000                     @ write 0 to pin 7
+	str r5, [r6]                        @ Store back the result in GPIOD output data register
+	ldr r0, = 3
+	bx lr @ Jump back to link register
+
+delay:
+	@ 32.768Khz 0x01F40000 
+	ldr r1,=5200000		@ loop+delay makes 6 operations? divide to 6 
+	muls r0, r1			@ Multiplier MAX 825 seconds
+
+loop_delay:
+	subs r0, #1		@ In each loop decrement
+	bne loop_delay	@ until r0 == 0
+	bx lr @ Jump back to link register
+
 
 loop:
 	nop                                 @ No operation. Do nothing.
