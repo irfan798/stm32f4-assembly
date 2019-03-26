@@ -63,6 +63,13 @@ _start:
 	orr r5, 0x01000000                  @ Write 01 to bits 24, 25 for P12
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
+	mov r8, 2 @ test
+	mov r9, 10 @tewset
+	udiv r1, r8, r9 @ stst
+		
+	mov r8, 2006
+	mov r9, 1000
+	b digits
 
 	ldr r4, = 12
 	bl fibonacci
@@ -75,6 +82,36 @@ _start:
 	ldr r0, =1 	@3 secs delay
 	bl delay
 	bl close_led
+
+
+digits:
+	@ R8 is number parameter 4508
+	@ R9 10 000
+
+	ldr r7, =10 @ For every loop divide ten for next digit	
+	cmp r8, r9 @ Compare number and Division factor exp. 2006?1000
+	bge _write_digit @ If number greater than division factor generate morse 
+	udiv r9, r7 @ for next digit divided, division factor. 1000/10
+
+	b digits
+
+_get_next_digit:
+	udiv r9, r7 @ for next digit divided, division factor. 1000/10
+
+_write_digit:
+	mov r4, r8 @ Save origin number to temp
+	udiv r8, r9 @ Divide to division factor
+
+	mov r1, r8 @ Write digit to parameter
+	@bl _run_morse
+
+	mul r5, r8, r9 @ Multiply division factor with digit to get last digit
+	subs r8, r4, r5 @ Substract from original number
+
+	cmp r9, 1 @ Control division factor if ended
+	bne _get_next_digit @ Bigger then
+
+	@Finish
 
 
 fibonacci:
@@ -99,7 +136,8 @@ open_led:
 	ldr r5, [r6]                        @ Read its content to r5
 	orr r5, 0x1000                      @ write 1 to pin 12
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
-	bx lr @ Jump back to link register
+	bx lr @ Jump back to link registern
+
 
 close_led:
 	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
