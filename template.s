@@ -101,6 +101,7 @@ _start:
 
 _main:
 	ldr r9, =0 @ Our counter, counts from 0 to 20
+	bl close_led
 	bl show_group_number @Show our number
 
 loop:
@@ -169,8 +170,8 @@ show_group_number:
 	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
 	ldr r6, = GPIOB_ODR                 @ Load GPIOD output data register
 	ldr r5, [r6]                        @ Read its content to r5
-	bic r5, 0x0080                      @ write 0 to pin 7
+	orr r5, 0x0080                      @ write 0 to pin 7
 	orr r5, 0x4000                      @ write 1 to pin 14
-	orr r5, 0x0001                      @ write 1 to pin 0
+	bic r5, 0x0001                      @ write 1 to pin 0
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 	bx lr								@ Jump back to link register
