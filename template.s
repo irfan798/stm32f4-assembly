@@ -20,7 +20,8 @@
 @ constants here for code readability.
 
 @ Constants
-.equ     LEDDELAY,      100000
+@.equ     SECCONSTANS,    5200 @ 1 ms
+.equ     SECCONSTANS,    3600 @ 0.5 ms
 .equ     MORSE_HOLDER,   0x0000001F  @0000 0000 0000 0000 0000 0000 0001 1111 
 
 @ Register Addresses
@@ -79,6 +80,7 @@ _start:
 	@orr r5, #0x00000004                 @ Set bit 3 to enable GPIOC clock
 	orr r5, #0x00000007                 @ Set bit 3 to enable GPIOC clock	
 	str r5, [r6]                        @ Store back the result in peripheral clock register
+	
 
 	@ Make GPIOB Pin7 as output pin (bits 15:14 in MODER register)
 	ldr r6, = GPIOB_MODER               @ Load GPIOD MODER register address to r6
@@ -93,7 +95,14 @@ _start:
 	orr r5, 0x00000001                  @ Write 01 to bits 14, 15 for P7 and 0,1 for P0
 	str r5, [r6]                        @ Store back the result in GPIOD MODER register
 
-	b morse
+	ldr r1, = 7 
+	bl morse
+	ldr r1, = 1
+	bl morse
+
+loop:
+	nop                                 @ No operation. Do nothing.
+	b loop @ Jump to loop
 
 open_led:
 	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
@@ -104,19 +113,6 @@ open_led:
 	orr r5, 0x0001                      @ write 1 to pin 0
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 	bx lr								@ Jump back to link register
-
-
-delay:
-	@ r0 is our parameter as miliseconds
-	@ 32.768Khz 0x01F40000 
-	@ldr r1,=5200		@ loop+delay makes 6 operations? divide to 6 
-	ldr r1,=2600		@ loop+delay makes 6 operations? divide to 6 
-	muls r0, r1			@ Multiplier MAX 825 seconds
-loop_delay:
-	subs r0, #1		@ In each loop decrement
-	bne loop_delay	@ until r0 == 0
-	bx lr								@ Jump back to link register
-
 
 close_led:
 	@ Set GPIOB Pin7 to 01 (bit 7 in ODR register)
@@ -130,11 +126,21 @@ close_led:
 	ldr r0, = 3
 	bx lr								@ Jump back to link register
 
-
+delay:
+	@ r0 is our parameter as miliseconds
+	@ 32.768Khz 0x01F40000 
+	ldr r1,=SECCONSTANS		@ loop+delay makes 6 operations? divide to 6 
+	@ldr r1,=2600		@ loop+delay makes 6 operations? divide to 6 
+	muls r0, r1			@ Multiplier MAX 825 seconds
+loop_delay:
+	subs r0, #1		@ In each loop decrement
+	bne loop_delay	@ until r0 == 0
+	bx lr								@ Jump back to link register
 
 
 morse:
-	ldr r1, = 7
+	@r1 is parameter
+	push {lr} @ First save our link register so we can use it later
 	@ 1 means dot 0 means dash
 	@ r1 is our parameter
 	ldr r2, =MORSE_HOLDER @ load morse holder
@@ -165,9 +171,10 @@ _show:
 	subs r4, #1 @ Decrement counter
 	bne _show	@ until r4 == 0
 
+	@ Delay between digits
+	ldr r0, =3000 @ 1000ms delay 
+	bl delay
 
-
-loop:
-	nop                                 @ No operation. Do nothing.
-	b loop @ Jump to loop
+	pop {lr} @ Take our lx back
+	bx lr @ Jump back where we were
 
