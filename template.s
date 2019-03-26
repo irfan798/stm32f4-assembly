@@ -20,12 +20,12 @@
 @ constants here for code readability.
 
 @ Constants
-@.equ     SECCONSTANS,    5200 @ 1 ms
-.equ     SECCONSTANS,    900 @ 0.5 ms
+@.equ     SEC_CONSTANS,    5200 @ 1 ms
+.equ     SEC_CONSTANS,    900 @ 0.25 ms
 .equ     MORSE_HOLDER,   0x0000001F  @0000 0000 0000 0000 0000 0000 0001 1111 
 .equ	 START_FROM,	 1000000
 
-.equ	COUNTEREND, 	9
+.equ	COUNTEREND, 	20
 
 @ Register Addresses
 @ You can find the base addresses for all the peripherals from Memory Map section
@@ -99,14 +99,13 @@ _start:
 
 
 _main:
-	ldr r11, =2 @ Our counter, counts from 0 to 20
-	ldr r9, =START_FROM
+	ldr r11, =0 @ Our counter, counts from 0 to 20
 	bl close_led
 	bl show_group_number @Show our number
 
 loop:
 	
-	@ READ BUTTOn
+	@ READ BUTTON
 	@ GPIOC INPUT IDR
 	@ldr r6, = GPIOA_INPUT              @ Load GPIOA INPUT register address to r6
 	ldr r6, = GPIOC_INPUT               @ Load GPIOC INPUT register address to r6
@@ -123,8 +122,8 @@ loop:
 	mov r4, r11 	@Write to parameter of fibonacci
 	bl fibonacci
 	mov r8, r1 @ Write fibonacci to digit parameter
-	bl digits
 	
+	bl digits
 
 	@ lastly control counter
 	cmp r11, #COUNTEREND @ If counter equals to 20 reset back
@@ -169,7 +168,7 @@ show_group_number:
 delay:
 	@ r0 is our parameter as miliseconds
 	@ 32.768Khz 0x01F40000 
-	ldr r1,=SECCONSTANS		@ loop+delay makes 6 operations? divide to 6 
+	ldr r1,=SEC_CONSTANS		@ loop+delay makes 6 operations? divide to 6 
 	@ldr r1,=2600		@ loop+delay makes 6 operations? divide to 6 
 	muls r0, r1			@ Multiplier MAX 825 seconds
 loop_delay:
@@ -242,13 +241,15 @@ digits:
 	@ R9 10 000
 
 	push {lr} @ First save our link register so we can use it later
+	ldr r7, =10 @ For every loop divide ten for next digit
+	ldr r9, =START_FROM
 
-	ldr r7, =10 @ For every loop divide ten for next digit	
+_digit_equ:
 	cmp r8, r9 @ Compare number and Division factor exp. 2006?1000
 	bge _write_digit @ If number greater than division factor generate morse 
 	udiv r9, r7 @ for next digit divided, division factor. 1000/10
 
-	b digits
+	b _digit_equ
 
 _get_next_digit:
 	udiv r9, r7 @ for next digit divided, division factor. 1000/10
@@ -258,15 +259,16 @@ _write_digit:
 	udiv r8, r9 @ Divide to division factor
 
 	mov r1, r8 @ Write digit to parameter
-	bl morse
 
-	mul r5, r8, r9 @ Multiply division factor with digit to get last digit
-	subs r8, r4, r5 @ Substract from original number
+	push {r4, r7, r8, r9} @ Save our intermediate values
+	bl morse
+	pop {r4, r7, r8, r9} @ Load our intermediate values
+
+	mul r8, r9 @ Multiply division factor with digit to get last digit
+	subs r8, r4, r8 @ Substract from original number
 
 	cmp r9, 1 @ Control division factor if ended
 	bne _get_next_digit @ Bigger then
 
 	pop {lr} @ Take our lx back
 	bx lr @ Jump back where we were
-
-@Finish
