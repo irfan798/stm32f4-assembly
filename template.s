@@ -22,6 +22,8 @@
 @ Constants
 .equ     LEDDELAY,      100000
 
+.equ	COUNTEREND, 	3
+
 @ Register Addresses
 @ You can find the base addresses for all the peripherals from Memory Map section
 @ RM0090 on page 64. Then the offsets can be found on their relevant sections.
@@ -97,8 +99,13 @@ _start:
 	@orr r5, 0x04000000                  @ Write 01 to bits 27, 26 PC13 	
 	@str r5, [r6] 
 
+_main:
+	ldr r9, =0 @ Our counter, counts from 0 to 20
+	bl show_group_number @Show our number
+
 loop:
 	
+	@ READ BUTTOn
 	@ GPIOC INPUT IDR
 	@ldr r6, = GPIOA_INPUT              @ Load GPIOA INPUT register address to r6
 	ldr r6, = GPIOC_INPUT               @ Load GPIOC INPUT register address to r6
@@ -108,10 +115,18 @@ loop:
 	cmp r5, r6							@Test if equal
 	bne loop
 
+	@ When clicked
+	adds r9, #1 @ Add one to counter
+
 	bl open_led
-	ldr r0, =1 	@3 secs delay
+	@ldr r0, =1 	@3 secs delay
+	mov r0, r9 	@3 secs delay
 	bl delay
 	bl close_led
+
+	@ lastly control counter
+	cmp r9, #COUNTEREND @ If counter equals to 20 reset back
+	beq _main @ if counter equals go back to main 
 
 	nop                                 @ No operation. Do nothing.
 	b loop                              @ Jump to loop
@@ -148,4 +163,14 @@ close_led:
 	bic r5, 0x0001                      @ write 0 to pin 0
 	str r5, [r6]                        @ Store back the result in GPIOD output data register
 	ldr r0, = 3
+	bx lr								@ Jump back to link register
+
+show_group_number:
+	@ Set GPIOB Pin7 to 1 (bit 7 in ODR register)
+	ldr r6, = GPIOB_ODR                 @ Load GPIOD output data register
+	ldr r5, [r6]                        @ Read its content to r5
+	bic r5, 0x0080                      @ write 0 to pin 7
+	orr r5, 0x4000                      @ write 1 to pin 14
+	orr r5, 0x0001                      @ write 1 to pin 0
+	str r5, [r6]                        @ Store back the result in GPIOD output data register
 	bx lr								@ Jump back to link register
